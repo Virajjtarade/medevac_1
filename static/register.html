@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MedEvac | Register</title><style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#172033;background:#f5f7fa}
+*{box-sizing:border-box}body{margin:0}a{color:#176b67}button,input,select{font:inherit}
+.topbar{background:#fff;border-bottom:1px solid #e1e6ec}.nav{max-width:1000px;margin:auto;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.brand{font-weight:800;font-size:20px;color:#153b55}.brand span{color:#19766f}.navlinks{display:flex;gap:16px;flex-wrap:wrap}.navlinks a{text-decoration:none;font-size:14px}
+main{max-width:1000px;margin:32px auto;padding:0 20px}.panel{background:white;border:1px solid #e1e6ec;border-radius:10px;padding:24px;margin:16px 0}
+h1{font-size:30px;line-height:1.2;margin:0 0 10px}h2{font-size:19px;margin:0 0 12px}p{line-height:1.55;color:#586678}.muted{color:#697586;font-size:14px}
+.button{display:inline-block;padding:11px 15px;background:#176b67;color:white;text-decoration:none;border:0;border-radius:7px;cursor:pointer;font-weight:700}
+.button.light{background:#edf4f4;color:#175c59}.button:disabled{opacity:.55;cursor:not-allowed}
+.hero{padding:36px}.hero p{max-width:620px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.small-card{border:1px solid #e1e6ec;border-radius:9px;padding:17px;background:#fff}.small-card h3{margin:0 0 7px;font-size:16px}
+label{display:block;font-size:14px;font-weight:700;margin:15px 0 6px}input,select{width:100%;padding:11px;border:1px solid #cbd5df;border-radius:7px;background:white}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.hidden{display:none}
+.notice{padding:12px;border-radius:7px;background:#edf7f4;color:#155b4c;white-space:pre-wrap;margin-top:16px}.notice.error{background:#fff0f0;color:#a42323}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row input{flex:1;min-width:220px}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.stat{background:#f7f9fb;padding:14px;border-radius:8px}.stat .num{font-size:25px;font-weight:800;margin-top:6px}
+.scroll{overflow:auto}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{text-align:left;padding:11px 8px;border-bottom:1px solid #e5eaf0;font-size:13px}th{color:#5f6b7a}small{color:#697586}.pill{background:#fff2d7;color:#795700;padding:4px 8px;border-radius:20px;font-size:12px}.error{color:#a42323}.footer{font-size:12px;color:#778292;text-align:center;padding:22px}
+@media(max-width:680px){main{margin:18px auto}.hero{padding:24px}.grid,.formgrid{grid-template-columns:1fr}h1{font-size:25px}.panel{padding:18px}}
+</style></head>
+<body><header class="topbar"><nav class="nav"><div class="brand">Med<span>Evac</span></div><div class="navlinks"><a href="/">Home</a><a href="/register.html">Register</a><a href="/admin.html">Admin</a></div></nav></header>
+<main><section class="panel"><p class="muted">ORGANIZATION ONBOARDING</p><h1>Register your organization</h1>
+<p class="muted">Submit the form. Your resource will stay inactive until an administrator approves it.</p>
+<form id="form">
+<label for="role">I am registering as</label><select id="role"><option value="hospital">Hospital</option><option value="ambulance_provider">Ambulance provider / NGO</option></select>
+<label for="name">Hospital or provider name</label><input id="name" required maxlength="100" placeholder="Example Hospital">
+<label for="location">Demo road-network location</label><input id="location" required maxlength="100" placeholder="e.g. Kothrud_Stand">
+<div id="hospitalFields"><div class="formgrid"><div><label for="specialties">Specialties</label><input id="specialties" placeholder="General, Trauma, Cardiac"></div><div><label for="beds">Available beds</label><input id="beds" type="number" min="0" value="0"></div></div></div>
+<div id="ambulanceFields" class="hidden"><label for="type">Ambulance capability</label><select id="type"><option>BLS</option><option>ALS</option><option>Neonatal</option><option>Advanced Trauma</option></select></div>
+<div class="actions"><button class="button" id="submitBtn" type="submit">Submit registration</button><a class="button light" href="/">Cancel</a></div>
+</form><div id="result" class="notice hidden" role="status"></div></section></main><div class="footer">MedEvac · Student project prototype</div>
+<script>
+const role=document.getElementById('role'),hf=document.getElementById('hospitalFields'),af=document.getElementById('ambulanceFields'),form=document.getElementById('form'),result=document.getElementById('result'),submitBtn=document.getElementById('submitBtn');
+function toggle(){hf.classList.toggle('hidden',role.value!=='hospital');af.classList.toggle('hidden',role.value!=='ambulance_provider')}
+role.addEventListener('change',toggle);toggle();
+form.addEventListener('submit',async e=>{e.preventDefault();submitBtn.disabled=true;result.classList.remove('hidden','error');result.textContent='Submitting registration…';
+const payload={role:role.value,organizationName:document.getElementById('name').value.trim(),location:document.getElementById('location').value.trim(),specialties:role.value==='hospital'?document.getElementById('specialties').value.trim():'',availableBeds:role.value==='hospital'?Number(document.getElementById('beds').value):0,ambulanceType:role.value==='ambulance_provider'?document.getElementById('type').value:'BLS'};
+try{const r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await r.json();if(!r.ok)throw new Error(data.message||'Registration failed');result.textContent=`Registration received.\nID: ${data.registrationId}\nStatus: PENDING\nAn administrator must verify and approve your request.`;form.reset();toggle()}
+catch(err){result.classList.add('error');result.textContent='Could not submit: '+err.message+'\nPlease check that the server is running and try again.'}
+finally{submitBtn.disabled=false}});
+</script></body></html>

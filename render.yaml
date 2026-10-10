@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: medevac-demo
+    runtime: docker
+    plan: free
+    envVars:
+      - key: MEDEVAC_ADMIN_KEY
+        value: medevac-demo-admin-2026
+      - key: MEDEVAC_DB_PATH
+        value: /tmp/dispatch_system.db

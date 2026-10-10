@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MedEvac | Admin</title><style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#172033;background:#f5f7fa}
+*{box-sizing:border-box}body{margin:0}a{color:#176b67}button,input,select{font:inherit}
+.topbar{background:#fff;border-bottom:1px solid #e1e6ec}.nav{max-width:1000px;margin:auto;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.brand{font-weight:800;font-size:20px;color:#153b55}.brand span{color:#19766f}.navlinks{display:flex;gap:16px;flex-wrap:wrap}.navlinks a{text-decoration:none;font-size:14px}
+main{max-width:1000px;margin:32px auto;padding:0 20px}.panel{background:white;border:1px solid #e1e6ec;border-radius:10px;padding:24px;margin:16px 0}
+h1{font-size:30px;line-height:1.2;margin:0 0 10px}h2{font-size:19px;margin:0 0 12px}p{line-height:1.55;color:#586678}.muted{color:#697586;font-size:14px}
+.button{display:inline-block;padding:11px 15px;background:#176b67;color:white;text-decoration:none;border:0;border-radius:7px;cursor:pointer;font-weight:700}
+.button.light{background:#edf4f4;color:#175c59}.button:disabled{opacity:.55;cursor:not-allowed}
+.hero{padding:36px}.hero p{max-width:620px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.small-card{border:1px solid #e1e6ec;border-radius:9px;padding:17px;background:#fff}.small-card h3{margin:0 0 7px;font-size:16px}
+label{display:block;font-size:14px;font-weight:700;margin:15px 0 6px}input,select{width:100%;padding:11px;border:1px solid #cbd5df;border-radius:7px;background:white}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.hidden{display:none}
+.notice{padding:12px;border-radius:7px;background:#edf7f4;color:#155b4c;white-space:pre-wrap;margin-top:16px}.notice.error{background:#fff0f0;color:#a42323}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row input{flex:1;min-width:220px}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.stat{background:#f7f9fb;padding:14px;border-radius:8px}.stat .num{font-size:25px;font-weight:800;margin-top:6px}
+.scroll{overflow:auto}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{text-align:left;padding:11px 8px;border-bottom:1px solid #e5eaf0;font-size:13px}th{color:#5f6b7a}small{color:#697586}.pill{background:#fff2d7;color:#795700;padding:4px 8px;border-radius:20px;font-size:12px}.error{color:#a42323}.footer{font-size:12px;color:#778292;text-align:center;padding:22px}
+@media(max-width:680px){main{margin:18px auto}.hero{padding:24px}.grid,.formgrid{grid-template-columns:1fr}h1{font-size:25px}.panel{padding:18px}}
+</style></head>
+<body><header class="topbar"><nav class="nav"><div class="brand">Med<span>Evac</span></div><div class="navlinks"><a href="/">Home</a><a href="/register.html">Register</a><a href="/admin.html">Admin</a></div></nav></header>
+<main><section class="panel"><p class="muted">SYSTEM MANAGEMENT</p><h1>Admin dashboard</h1><p class="muted">The demo key is prefilled. Set MEDEVAC_ADMIN_KEY in Render to the same value shown in the key box, then redeploy.</p>
+<div class="row"><input id="adminKey" type="password" autocomplete="current-password" placeholder="Enter admin key" value="medevac-demo-admin-2026"><button class="button" id="loadBtn">Load dashboard</button></div><p id="message" aria-live="polite"></p></section>
+<section class="panel"><h2>System overview</h2><div class="stats" id="stats"><div class="stat"><div class="muted">Waiting for data</div><div class="num">—</div></div></div></section>
+<section class="panel"><div class="row" style="justify-content:space-between"><div><h2>Registration requests</h2><p class="muted">Check each request before approving it.</p></div><button class="button light" id="refreshBtn">Refresh</button></div>
+<div class="scroll"><table><thead><tr><th>ID</th><th>Type</th><th>Organization</th><th>Location</th><th>Details</th><th>Status</th><th>Action</th></tr></thead><tbody id="registrations"><tr><td colspan="7">Enter the admin key to load requests.</td></tr></tbody></table></div></section>
+<section class="panel"><h2>Security reminder</h2><p class="muted">Student demo only: this easy-access key is not safe for a public production system. Change it before sharing the portal widely. After approving a provider, copy its API key and share it only with that organization.</p></section>
+</main><div class="footer">MedEvac · Student project prototype</div>
+<script>
+const $=id=>document.getElementById(id);function key(){return $('adminKey').value.trim()}function message(t,err=false){$('message').textContent=t;$('message').className=err?'error':''}
+async function api(path,opts={}){const r=await fetch(path,{...opts,headers:{'Content-Type':'application/json','X-Admin-Key':key(),...(opts.headers||{})}});const data=await r.json().catch(()=>({message:'Invalid server response'}));if(!r.ok)throw new Error(data.message||`HTTP ${r.status}`);return data}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function refresh(){if(!key()){message('Enter the admin key first.',true);return}try{const [summary,list]=await Promise.all([api('/api/admin/summary'),api('/api/admin/registrations')]);const labels=[['Pending requests',summary.pendingRegistrations],['Hospitals',summary.hospitals],['Ambulances',summary.ambulances],['Available ambulances',summary.availableAmbulances],['Emergency logs',summary.activeEmergencyLogs]];$('stats').innerHTML=labels.map(([k,v])=>`<div class="stat"><div class="muted">${k}</div><div class="num">${v}</div></div>`).join('');const rows=list.registrations||[];$('registrations').innerHTML=rows.length?rows.map(r=>`<tr><td>${r.id}</td><td>${esc(r.role)}</td><td>${esc(r.organizationName)}</td><td>${esc(r.location)}</td><td>${r.role==='hospital'?`Specialties: ${esc(r.specialties||'—')}<br>Beds: ${r.availableBeds}`:`Ambulance: ${esc(r.ambulanceType||'BLS')}`}</td><td><span class="pill">${esc(r.status)}</span></td><td>${r.status==='PENDING'?`<button class="button" data-approve="${r.id}">Approve</button>`:'—'}</td></tr>`).join(''):'<tr><td colspan="7">No requests yet.</td></tr>';message('Dashboard loaded.')}catch(e){message(e.message,true)}}
+$('loadBtn').onclick=refresh;$('refreshBtn').onclick=refresh;$('registrations').onclick=async e=>{const id=e.target.dataset.approve;if(!id)return;if(!confirm(`Approve registration #${id}?`))return;try{const result=await api('/api/admin/registrations/approve',{method:'POST',body:JSON.stringify({registrationId:Number(id)})});alert(`Approved. Resource ID: ${result.resourceId}\n\nProvider API key (copy it now):\n${result.apiKey}`);await refresh()}catch(err){message(err.message,true)}};
+</script></body></html>
